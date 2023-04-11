@@ -108,9 +108,9 @@ const Header = () => {
             </li>
             <li>
               <AdminOnlyLink>
-               <link to="/admin/home">
+               <Link to="/admin/home">
               <button className='--btn-primary'>Admin</button>
-              </link>
+              </Link>
               </AdminOnlyLink>
             </li>
             <li>

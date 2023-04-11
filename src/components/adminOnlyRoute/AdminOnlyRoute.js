@@ -16,9 +16,9 @@ const AdminOnlyRoute = ({children}) => {
                 <h2>Permission denied.</h2>
                 <p>This page can only be view by an Admin user.</p>
                 <br/>
-                {/* <Link to="/"> */}
+                <Link to="/">
                 <button className='--btn'>&larr; Back To Home</button>
-                {/* </Link> */}
+                </Link>
             </div>
         </section>
         </>
