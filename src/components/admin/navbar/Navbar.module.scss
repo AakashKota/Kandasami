@@ -11,18 +11,20 @@
       background-color: var(--light-blue);
   
       h4 {
-        color: #fff;
+        color: black;
       }
     }
   
     nav ul {
       li {
+        color: black;
         border-bottom: 1px solid #ccc;
         padding: 1rem;
         position: relative;
         a {
           display: block;
           width: 100%;
+          color: black;
         }
       }
     }
