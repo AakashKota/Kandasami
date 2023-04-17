@@ -2,34 +2,44 @@ import { useState } from 'react';
 
 import styles from './AddProducts.module.scss';
 import Card from "../../card/Card";
-import {storage} from "../../../firebase/config";
-
+import {db, storage} from "../../../firebase/config";
+import Loader from "../../loader/Loader";
 import {
   getDownloadURL,
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
 import { toast } from 'react-toastify';
+import { Await, useNavigate } from 'react-router';
+import { Timestamp, addDoc, collection } from 'firebase/firestore';
+
 
 const categories=[
   {id:1, name:"Wedding"},
   {id:2, name:"Silk"},
   {id:3, name:"Kanchepuram"},
   {id:4, name:"Cotton"},
-]
-
-
-
-const AddProducts = () => {
-  const [product,setProduct]=useState({
+];
+const initialState={
     name: "",
     imageURL: "",
     price:0,
     category: "",
     brand: "",
-    desc: "",   
+    desc: "", 
+}
+
+
+
+
+const AddProducts = () => {
+  const [product,setProduct]=useState({
+    ...initialState
   });
   const [uploadProgress,setUploadProgress]=useState(0);
+  const [isLoading,setIsLoading]=useState(false);
+  const navigate=useNavigate()
+  
   const handleInputChange = (e)=>{
     const{name,value}=e.target;
     setProduct({...product, [name]: value});
@@ -60,11 +70,34 @@ const AddProducts = () => {
 
   const addProduct=(e)=>{
     e.preventDefault();
-    console.log(product)
+    console.log(product);
+    setIsLoading(true);
+
+    try{
+    const docRef = addDoc(collection(db, "products"), {
+      name: product.name,
+      imageURL:product.imageURL,
+      price:Number(product.price),
+      category:product.category,
+      brand:product.brand,
+      desc:product.imageURL ,
+      createdAt:Timestamp.now().toDate()
+      
+    });
+    setIsLoading(false);
+    setUploadProgress(0)
+    setProduct({...initialState});
+
+    toast.success("Product Uploaded Successfully");
+    navigate("/admin/all-products")
+  }catch(error){
+    toast.error(error.message);
+  }
   };
 
   return (
     <>
+    {isLoading && <Loader />}
     <div className={styles.product}>
       <h1>AddProducts</h1>
       <Card cardClass={styles.card}>
@@ -74,16 +107,26 @@ const AddProducts = () => {
 
          <label>Product Image: </label> 
          <Card cardClass={styles.group}>
-          <div className={styles.progress}>
-            <div className={styles["progress-bar"]} style={{width:"50%"}}>
-              Uploading 50%
+
+          {uploadProgress === 0 ? null :(
+              <div className={styles.progress}>
+              <div className={styles["progress-bar"]} style={{width: `${uploadProgress}%`}}>
+                {uploadProgress <100 ? `Uploading ${uploadProgress}%` : `Upload Complete ${uploadProgress}%`}
+              </div>
             </div>
-          </div>
+          )}
+          
+
+
           <input type='file' accept='image/*' placeholder='Product Image' name='image' onChange={(e)=> handleImageChange(e)}/>
-          <input type='text'
+
+          {product.imageURL === "" ? null : (
+            <input type='text'
           //  required 
           placeholder='Image URL'
            name='imageURL' value={product.imageURL} disabled/>
+          )}
+          
          </Card>
 
          <label>
