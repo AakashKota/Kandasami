@@ -7,7 +7,7 @@ const Loader = () => {
   return ReactDOM.createPortal (
     <div className={styles.wrapper}>
         <div className={styles.loader}>
-            <img src={loaderImg} alt=''/>
+        <img src={loaderImg} alt=''/>
         </div>
     </div>,
     document.getElementById("loader")

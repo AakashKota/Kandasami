@@ -5,14 +5,16 @@ import Card from "../../card/Card";
 import {db, storage} from "../../../firebase/config";
 import Loader from "../../loader/Loader";
 import {
+  deleteObject,
   getDownloadURL,
   ref,
   uploadBytesResumable,
 } from "firebase/storage";
 import { toast } from 'react-toastify';
-import { Await, useNavigate } from 'react-router';
-import { Timestamp, addDoc, collection } from 'firebase/firestore';
-
+import { Await, useNavigate, useParams } from 'react-router';
+import { Timestamp, addDoc, collection, doc, setDoc } from 'firebase/firestore';
+import { useSelector } from 'react-redux';
+import {selectProducts} from "../../../redux/slice/productSlice";
 
 const categories=[
   {id:1, name:"Wedding"},
@@ -22,7 +24,7 @@ const categories=[
 ];
 const initialState={
     name: "",
-    imageURL: "",
+    imageURL: [],
     price:0,
     category: "",
     brand: "",
@@ -33,18 +35,34 @@ const initialState={
 
 
 const AddProducts = () => {
-  const [product,setProduct]=useState({
-    ...initialState
+  const{id}=useParams()
+  const  products=useSelector(selectProducts);
+  const productEdit= products.find((item) => item.id===id);
+  console.log(productEdit);
+  const [product,setProduct]=useState(()=>{
+    const newState=detectForm(id,
+      {...initialState},productEdit)
+      return newState;
   });
   const [uploadProgress,setUploadProgress]=useState(0);
   const [isLoading,setIsLoading]=useState(false);
-  const navigate=useNavigate()
+  const navigate=useNavigate();
+  
+  // console.log(products);
+
+  function detectForm(id,f1,f2){
+    if(id==="ADD"){
+      return f1;
+    }
+    return f2;
+  }
   
   const handleInputChange = (e)=>{
     const{name,value}=e.target;
     setProduct({...product, [name]: value});
   };
   const handleImageChange = (e)=>{
+   
     const file = e.target.files[0];
     const storageRef = ref(storage, `kandasami/${Date.now()}${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
@@ -81,8 +99,7 @@ const AddProducts = () => {
       category:product.category,
       brand:product.brand,
       desc:product.imageURL ,
-      createdAt:Timestamp.now().toDate()
-      
+      createdAt: new Date().toString()      
     });
     setIsLoading(false);
     setUploadProgress(0)
@@ -95,13 +112,39 @@ const AddProducts = () => {
   }
   };
 
+  const editProduct=(e)=>{
+   e.preventDefault();
+   setIsLoading(true);
+    if(product.imageURL!==productEdit.imageURL){
+       const storageRef=ref(storage,productEdit.imageURL);
+       deleteObject(storageRef);
+    }
+   try{
+
+    setDoc(doc(db,"products",id),{
+      name: product.name,
+      imageURL:product.imageURL,
+      price:Number(product.price),
+      category:product.category,
+      brand:product.brand,
+      desc:product.imageURL ,
+      createdAt: productEdit.createdAt, 
+      EditedAt: new Date().toString(),
+    });
+    setIsLoading(false);
+    toast.success("Product edited successfully")
+    navigate("../../admin/all-products")
+   }catch(error){
+    toast.error(error.message);
+   }
+  };
   return (
     <>
     {isLoading && <Loader />}
     <div className={styles.product}>
-      <h1>AddProducts</h1>
+      <h2>{detectForm(id,"ADD New Product","Edit Product")}</h2>
       <Card cardClass={styles.card}>
-        <form onSubmit={addProduct}>
+        <form onSubmit={detectForm(id,addProduct,editProduct)}>
         <label> Product Name: </label>
         <input type='text' placeholder='Product Name' required name='name' value={product.name} onChange={(e)=> handleInputChange(e)} /> 
 
@@ -118,7 +161,7 @@ const AddProducts = () => {
           
 
 
-          <input type='file' accept='image/*' placeholder='Product Image' name='image' onChange={(e)=> handleImageChange(e)}/>
+          <input type='file' accept='image/*' placeholder='Product Image' name='image' multiple onChange={(e)=> handleImageChange(e)} />
 
           {product.imageURL === "" ? null : (
             <input type='text'
@@ -154,7 +197,7 @@ const AddProducts = () => {
         Product Description: </label>
         <textarea name='desc' required value={product.desc} onChange={(e)=>handleInputChange(e)} cols='30' rows='10'></textarea>
 
-        <button className='--btn --btn-primary'>Save Product</button>
+        <button className='--btn --btn-primary'>{detectForm(id,"Save Product","Edit Product")}</button>
 
 
         </form>

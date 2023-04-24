@@ -8,43 +8,24 @@ import styles from "./ViewProducts.module.scss";
 import Loader from '../../loader/Loader';
 import { deleteObject, ref } from 'firebase/storage';
 import Notiflix from 'notiflix';
-import { useDispatch } from 'react-redux';
-import { STORE_PRODUCTS } from '../../../redux/slice/productSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { STORE_PRODUCTS, selectProducts } from '../../../redux/slice/productSlice';
+import useFetchCollection from '../../../customHooks/useFetchCollection';
 
 
 const ViewProducts = () => {
-  const[products,setProducts]=useState([]);
-  const[isLoading,setIsLoading]=useState(false);
+  const { data, isLoading}= useFetchCollection("products");
+  const products=useSelector(selectProducts);
   const dispatch=useDispatch();
   useEffect(()=>{
-    getProducts()
-  },[])
-
-  const getProducts=()=>{
-    setIsLoading(true);
-    try{
-      const productsRef = collection(db, "products");
-      const q = query(productsRef, orderBy("createdAt","desc"));     
-      onSnapshot(q, (snapshot) => {
-        // console.log(snapshot.docs)
-        const allProducts= snapshot.docs.map((doc)=> ({
-          id: doc.id,
-          ...doc.data()
-        }))
-      console.log(allProducts);
-      setProducts(allProducts);
-      setIsLoading(false);
-      dispatch(
-        STORE_PRODUCTS({
-          products:allProducts,
-        })
-        )
-  });
-    } catch(error){
-      setIsLoading(false);
-      toast.error(error);
-    }
-  };
+    dispatch(
+      STORE_PRODUCTS({
+        products:data,
+      })
+    );
+  },[dispatch,data])
+  
+ 
     const confirmDelete=(id,imageURL)=>{
       Notiflix.Confirm.show(
         "Delete Product!!!",
@@ -78,6 +59,7 @@ const ViewProducts = () => {
         toast.error(error.message);
       }
     }
+
   return (
     <>
     {isLoading && <Loader/>}
@@ -112,7 +94,7 @@ const ViewProducts = () => {
                 <td>{category}</td>
                 <td>{`Rs${price}`}</td>
                 <td className={styles.icons}>
-                  <Link to="../../admin/addProducts">
+                  <Link to={`../../admin/add-products/${id}`}>
                     <FaEdit size={20} color='green'/>
                   </Link>
                   &nbsp;&nbsp;
